@@ -1,7 +1,7 @@
 // main.ts — hands in Meridian Run: copies game/ and screenshots/ from
 // this repository into the output directory, then writes the dossier
 // that buildDossier produces from those very files.
-import { cpSync, existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { buildDossier } from './vendor/makefun-game.ts';
@@ -24,8 +24,13 @@ function copyTree(name: string): void {
   cpSync(src, dst, { recursive: true });
 }
 
-rmSync(outDir, { recursive: true, force: true });
+// Empty the output directory's CONTENTS, never the directory itself:
+// in the grader /output is a mount point whose parent is read-only, so
+// removing /output itself fails, but its children can be cleared.
 mkdirSync(outDir, { recursive: true });
+for (const child of readdirSync(outDir)) {
+  rmSync(join(outDir, child), { recursive: true, force: true });
+}
 copyTree('game');
 copyTree('screenshots');
 const dossier = buildDossier(outDir, caps);
